@@ -20,4 +20,3 @@ st.dataframe(df.head(20), use_container_width=True)
 
 st.subheader("Links")
 st.markdown("- **GitHub:** <https://github.com/rajern/ind320-rajvir>")
-st.markdown("- **Notebook/PDF:** <https://ind320-rajvir-7xhejyuxheedg6tbdqwx3h.streamlit.app/>")
