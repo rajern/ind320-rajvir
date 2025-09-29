@@ -5,50 +5,38 @@ from data_loader import load_data
 
 st.title("Plot explorer")
 
-# Data
-df = load_data()                     # time index
+df = load_data()  # time index
 
-# --- Controls ---
-cols = ["All columns"] + list(df.columns)
-col_choice = st.selectbox("Select column", cols, index=0)
+# ---- Controls ----
+options = ["All columns"] + list(df.columns)
+choice = st.selectbox("Select column", options, index=0)
 
-# Build month options from data
-months = pd.Index(sorted(df.index.to_period("M").unique()))
-# show as YYYY-MM strings
-month_labels = months.astype(str).tolist()
+months = sorted(df.index.to_period("M").unique())
+labels = [str(m) for m in months]
 
-# Range of months (subset), default = first month only
-m_start, m_end = st.select_slider(
+start_label, end_label = st.select_slider(
     "Select months",
-    options=month_labels,
-    value=(month_labels[0], month_labels[0])
+    options=labels,
+    value=(labels[0], labels[0])  # default = first month
 )
 
-# --- Subset by month range ---
-start_p = pd.Period(m_start, freq="M")
-end_p   = pd.Period(m_end,   freq="M")
+# ---- Subset by month range ----
+start_p = pd.Period(start_label, freq="M")
+end_p   = pd.Period(end_label,   freq="M")
 mask = (df.index.to_period("M") >= start_p) & (df.index.to_period("M") <= end_p)
 d = df.loc[mask]
-st.caption(f"Showing: {start_p.start_time.date()} → {end_p.end_time.date()}  (rows: {len(d):,})")
 
-# --- Plot ---
+# ---- Plot ----
 fig, ax = plt.subplots(figsize=(10, 4))
-
-if col_choice == "All columns":
-    # Optionally standardize to make scales comparable
-    standardize = st.checkbox("Standardize (z-score)", value=True)
-    plot_df = d.copy()
-    if standardize and len(plot_df) > 0:
-        plot_df = (plot_df - plot_df.mean()) / plot_df.std(ddof=0)
-
-    plot_df.plot(ax=ax, linewidth=1)
-    ax.set_title("All columns" + (" (standardized)" if standardize else ""))
-    ax.set_ylabel("z-score" if standardize else "value")
+if choice == "All columns":
+    d.plot(ax=ax)
+    ax.set_title("All columns")
+    ax.set_ylabel("value")
 else:
-    d[col_choice].plot(ax=ax, linewidth=1)
-    ax.set_title(col_choice)
-    ax.set_ylabel(col_choice)
+    d[choice].plot(ax=ax)
+    ax.set_title(choice)
+    ax.set_ylabel(choice)
 
 ax.set_xlabel("time")
 ax.grid(True)
-st.pyplot(fig, clear_figure=True)
+st.pyplot(fig)
