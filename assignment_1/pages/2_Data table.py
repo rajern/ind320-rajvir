@@ -5,13 +5,16 @@ from data_loader import load_data
 st.title("Data table")
 
 df = load_data()
+# Keep only the first month in the data
 m_df = df[df.index.to_period("M") == df.index.min().to_period("M")]
 
+# Build a small table: one row per column + sparkline data for that month
 table = pd.DataFrame({
     "Variable": df.columns,
     "First month": [m_df[c].tolist() for c in df.columns],
 })
 
+# Show the table with a line chart cell for each row
 st.dataframe(
     table,
     hide_index=True,
