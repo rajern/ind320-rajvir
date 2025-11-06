@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from data_loader import load_data
+from data_loader import load_open_meteo
 
 st.title("Plot explorer")
 
-df = load_data()  # time index
+# Load data with cache function from data_loader.py
+df = load_open_meteo() 
 
 # ---- Controls ----
 options = ["All columns"] + list(df.columns)

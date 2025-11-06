@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
-from data_loader import load_data
+from data_loader import load_open_meteo
 
 st.title("Data table")
 
-df = load_data()
+# Load data with cache function from data_loader.py
+df = load_open_meteo()
+
 # Keep only the first month in the data
 m_df = df[df.index.to_period("M") == df.index.min().to_period("M")]
 
