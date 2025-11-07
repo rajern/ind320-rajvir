@@ -3,91 +3,114 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 from pymongo import MongoClient
+from data_loader import load_elhub_api_data
 
 st.title("Production explorer")
 
-# Read URI from secrets.
-client = MongoClient(st.secrets["MONGODB_URI"])
-db = client["elhub2021"]
+# Load elhub api data with cache function from data_loader.py
+df = load_elhub_api_data()
+YEAR = 2021
 
-# Try the common collection name first, then a fallback
-col_name = "production_per_group_hour"
-if col_name not in db.list_collection_names():
-    col_name = "prod_by_group_hour"
-col = db[col_name]
+# Available price areas
+AREAS = sorted(df["pricearea"].dropna().unique().tolist())
 
-# Get available areas (fall back to NO1–NO5 if not found)
-try:
-    AREAS = sorted([a for a in col.distinct("pricearea") if a])
-except Exception:
-    AREAS = ["NO1", "NO2", "NO3", "NO4", "NO5"]
+# Radio buttons for price area
+area = st.radio("Price area", AREAS, horizontal=True)
 
-# Controls 
-area = st.radio("Price area", AREAS, horizontal=True, index=AREAS.index("NO3") if "NO3" in AREAS else 0)
-left, right = st.columns(2)
+# Split the layout into two columns
+left_col, right_col = st.columns(2)
 
-# Piechart: total 2021 by production group
-with left:
+# ---- Left: pie chart for 2021 ----
+with left_col:
     st.subheader("Share by group (2021)")
-    pipe = [
-        {"$match": {
-            "pricearea": area,
-            "starttime": {"$gte": datetime(2021, 1, 1), "$lt": datetime(2022, 1, 1)}
-        }},
-        {"$group": {"_id": "$productiongroup", "kwh": {"$sum": "$quantitykwh"}}},
-        {"$sort": {"kwh": -1}}
+
+    # Filter to selected area and year
+    df_area_2021 = df[
+        (df["pricearea"] == area) &
+        (df["starttime"].dt.year == YEAR)
     ]
-    rows = list(col.aggregate(pipe))
-    if not rows:
+
+    if df_area_2021.empty:
         st.warning("No data found for 2021.")
     else:
-        labels = [r["_id"] for r in rows]
-        sizes = [r["kwh"] for r in rows]
-        fig, ax = plt.subplots()
-        ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
-        ax.set_title(f"{area} – 2021")
-        ax.axis("equal")
-        st.pyplot(fig, clear_figure=True)
+        # Aggregate energy per production group
+        pie_data = (
+            df_area_2021
+            .groupby("productiongroup", as_index=False)["quantitykwh"]
+            .sum()
+            .rename(columns={"quantitykwh": "kwh"})
+            .sort_values("kwh", ascending=False)
+        )
 
-# Linechart: hourly in one month, one line per group
-with right:
+        fig_pie = px.pie(
+            pie_data,
+            names="productiongroup",
+            values="kwh",
+        )
+        fig_pie.update_traces(textposition="inside", textinfo="percent+label")
+        fig_pie.update_layout(title=f"{area} – {YEAR}")
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+# ---- Right: lineplot per month and production group ----
+with right_col:
     st.subheader("Hourly lines by month")
-    month = st.selectbox("Month", list(range(1, 13)), format_func=lambda m: f"{m:02d}")
 
-    # Let user pick groups for this area
-    groups = sorted([g for g in col.distinct("productiongroup", {"pricearea": area}) if g])
-    pick = st.multiselect("Production group(s)", groups, default=groups)
+    # Simple month selector (1–12)
+    month = st.selectbox(
+        "Month",
+        list(range(1, 13)),
+        format_func=lambda m: f"{m:02d}",
+    )
 
-    start = datetime(2021, month, 1)
-    end = datetime(2022, 1, 1) if month == 12 else datetime(2021, month + 1, 1)
+    # All production groups that exist in this price area
+    groups_in_area = sorted(
+        df.loc[df["pricearea"] == area, "productiongroup"]
+        .dropna()
+        .unique()
+        .tolist()
+    )
 
-    match = {"pricearea": area, "starttime": {"$gte": start, "$lt": end}}
-    if pick:
-        match["productiongroup"] = {"$in": pick}
+    # Pills for selecting one or more production groups
+    selected_groups = st.pills(
+        "Production group(s)",
+        options=groups_in_area,
+        selection_mode="multi",
+        default=groups_in_area,
+    )
 
-    pipe = [
-        {"$match": match},
-        {"$group": {"_id": {"t": "$starttime", "g": "$productiongroup"},
-                    "kwh": {"$sum": "$quantitykwh"}}}
-    ]
-    rows = list(col.aggregate(pipe))
+    # Filter by area, year, month and chosen groups
+    mask = (
+        (df["pricearea"] == area) &
+        (df["starttime"].dt.year == YEAR) &
+        (df["starttime"].dt.month == month)
+    )
+    if selected_groups:
+        mask &= df["productiongroup"].isin(selected_groups)
 
-    if not rows:
+    # Aggregate hourly kWh per group (one line per group)
+    df_hourly = (
+        df[mask]
+        .groupby(["starttime", "productiongroup"], as_index=False)["quantitykwh"]
+        .sum()
+        .rename(columns={"quantitykwh": "kwh"})
+    )
+
+    if df_hourly.empty:
         st.info("No hourly data for this selection.")
     else:
-        # Make a small DataFrame and pivot to wide format for plotting
-        data = [{"time": r["_id"]["t"], "group": r["_id"]["g"], "kwh": r["kwh"]} for r in rows]
-        df = pd.DataFrame(data)
-        wide = df.pivot(index="time", columns="group", values="kwh").sort_index()
+        fig_line = px.line(
+            df_hourly,
+            x="starttime",
+            y="kwh",
+            color="productiongroup",
+        )
+        fig_line.update_layout(
+            title=f"{area} – {YEAR}-{month:02d}",
+            xaxis_title="Time",
+            yaxis_title="kWh",
+        )
+        st.plotly_chart(fig_line, use_container_width=True)
 
-        fig, ax = plt.subplots()
-        wide.plot(ax=ax)  
-        ax.set_title(f"{area} – {2021}-{month:02d}")
-        ax.set_xlabel("Time")
-        ax.set_ylabel("kWh")
-        ax.grid(True)
-        st.pyplot(fig, clear_figure=True)
-
-# Small note
+# ---- Expander with short documentation ----
 with st.expander("About"):
     st.write("Data: Elhub 2021.")
