@@ -4,3 +4,7 @@ pandas
 matplotlib
 numpy
 plotly
+openmeteo-requests
+scipy
+scikit-learn
+statsmodels
