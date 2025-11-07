@@ -8,3 +8,4 @@ openmeteo-requests
 scipy
 scikit-learn
 statsmodels
+requests
