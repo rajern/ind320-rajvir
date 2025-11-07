@@ -18,9 +18,11 @@ def load_elhub_api_data():
     db = client["elhub2021"]
     col = db["production_per_group_hour"]
 
+    # Read all documents, drop the internal MongoDB _id field
     records = list(col.find({}, {"_id": 0}))
     client.close()
 
+    # Convert to DataFrame and ensure starttime is a proper datetime column
     df = pd.DataFrame(records)
     df["starttime"] = pd.to_datetime(df["starttime"])
     return df
