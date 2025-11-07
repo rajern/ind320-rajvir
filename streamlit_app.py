@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from data_loader import load_data
 
 st.set_page_config(page_title="IND320 App", layout="wide")
 

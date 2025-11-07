@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from data_loader import load_open_meteo
+from src.data_loader import load_open_meteo
 
 st.title("Data table")
 

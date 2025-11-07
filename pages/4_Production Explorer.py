@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 from datetime import datetime
 from pymongo import MongoClient
-from data_loader import load_elhub_api_data
+from src.data_loader import load_elhub_api_data
 
 st.title("Production explorer")
 

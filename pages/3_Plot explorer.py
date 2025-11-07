@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from data_loader import load_open_meteo
+from src.data_loader import load_open_meteo
 
 st.title("Plot explorer")
 
