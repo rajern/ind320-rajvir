@@ -33,7 +33,7 @@ def load_elhub_api_data():
 def load_open_meteo_api(
     latitude: float,
     longitude: float,
-    year: int = 2021,
+    year: int = 2021, # Choose default year as 2021
     area: str | None = None,
 ) -> pd.DataFrame:
     """Download hourly weather data for given coordinates and year."""
