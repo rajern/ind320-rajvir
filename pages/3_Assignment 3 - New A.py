@@ -47,6 +47,7 @@ def plot_stl_elhub(
 
     # Standard decomposition plot from statsmodels
     fig = result.plot()
+    fig.set_size_inches(8, 4)
     fig.suptitle(f"STL decomposition – {area}, {group}", fontsize=10)
     fig.tight_layout()
 
@@ -131,7 +132,7 @@ with tab_stl:
             trend=trend,
             robust=robust,
         )
-        st.pyplot(fig_stl)
+        st.pyplot(fig_stl, use_container_width=False)
     except ValueError as e:
         st.warning(str(e))
 
