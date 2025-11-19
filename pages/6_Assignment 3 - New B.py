@@ -65,7 +65,7 @@ def plot_temperature_with_spc(
     ax.plot(timestamps, temp, linewidth=0.9, label="Temperature")
     ax.plot(timestamps, lower_limit, linestyle="--", linewidth=0.9, label="SPC lower")
     ax.plot(timestamps, upper_limit, linestyle="--", linewidth=0.9, label="SPC upper")
-    ax.scatter(timestamps[is_outlier], temp[is_outlier], s=12, label="Outliers")
+    ax.scatter(timestamps[is_outlier], temp[is_outlier], s=12, color="red", label="Outliers")
 
     ax.set_xlabel("Time")
     ax.set_ylabel("Temperature (°C)")
@@ -123,7 +123,7 @@ def plot_precipitation_with_lof(
     # Plot precipitation with outliers highlighted
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(time, precip, linewidth=0.9, label="Precipitation")
-    ax.scatter(time[is_outlier], precip[is_outlier], s=12, label="Outliers")
+    ax.scatter(time[is_outlier], precip[is_outlier], s=12, color="red", label="Outliers")
 
     ax.set_xlabel("Time")
     ax.set_ylabel("Precipitation (mm)")
