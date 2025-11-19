@@ -47,7 +47,7 @@ def plot_stl_elhub(
 
     # Standard decomposition plot from statsmodels
     fig = result.plot()
-    fig.set_size_inches(8, 4)
+    fig.set_size_inches(9, 4)
     fig.suptitle(f"STL decomposition – {area}, {group}", fontsize=10)
     fig.tight_layout()
 
